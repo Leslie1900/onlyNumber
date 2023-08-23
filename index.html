@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>千分位问题</title>
+</head>
+<!-- v-thousand 是为了输入框输入的时候实时的显示千分位格式，但是一旦输入非数字就导致输入框卡死一样，无法做任何操作了。 -->
+<!-- v-only-number  是为了保证只能输入数字，isMoney:true  表示要格式千分位，若不加会安装分号出现四舍五入的问题 -->
+<body>
+  <div id="App">
+    <div style="width: 80%">
+      <el-form :model="form">
+        {{form.itemList}}
+        <el-table :data="form.itemList" border stripe fit>
+          <el-table-column prop="date" label="重量">
+            <template slot-scope="{row,$index}">
+              <el-form-item required :prop="'itemList.'+$index+'.weightStr'" label-width="0" :show-message="false">
+                <el-input v-model="row.weightStr" v-only-number="{precision:4,min:0}" type="text" maxlength="40"
+                  placeholder="请输入" />
+              </el-form-item>
+            </template>
+          </el-table-column>
+           <!-- 加 v-thousand 只要输入了非数字就会出现bug，输入框就无法再做任何输入删除等操作 -->
+          <el-table-column prop="date" label="价格1">
+            <template slot-scope="{row,$index}">
+              <el-form-item required :prop="'itemList.'+$index+'.priceStr'" label-width="0" :show-message="false">
+                <el-input v-model="row.priceStr"  v-only-number="{precision:2,min:0,isMoney:true}" type="text"
+                  maxlength="40" placeholder="请输入" />
+              </el-form-item>
+            </template>
+          </el-table-column>
+          <!-- 加 v-thousand 数据回显的时候会自动格式化千分位 -->
+          <el-table-column prop="date" label="价格2">
+            <template slot-scope="{row,$index}">
+              <el-form-item required :prop="'itemList.'+$index+'.priceStr2'" label-width="0" :show-message="false">
+                <el-input v-model="row.priceStr2"  v-only-number="{precision:2,min:0,isMoney:true}" type="text"
+                  maxlength="40" placeholder="请输入" />
+              </el-form-item>
+            </template>
+          </el-table-column>
+          <!-- 不加 v-thousand 数据回显的时候不会自动格式化千分位，必须手动失焦才会格式化 -->
+          <el-table-column prop="date" label="价格3">
+            <template slot-scope="{row,$index}">
+              <el-form-item required :prop="'itemList.'+$index+'.priceStr3'" label-width="0" :show-message="false">
+                <el-input v-model="row.priceStr3"  v-only-number="{precision:2,min:0}" type="text"
+                  maxlength="40" placeholder="请输入" />
+              </el-form-item>
+            </template>
+          </el-table-column>
+          <el-table-column prop="date" label="金额">
+            <template slot-scope="{row,$index}">
+              <el-form-item required :prop="'itemList.'+$index+'.amountStr'" label-width="0" :show-message="false">
+                <el-input v-model="row.amountStr" v-only-number="{precision:2,max:400}" type="text" maxlength="40"
+                  placeholder="请输入" />
+              </el-form-item>
+            </template>
+          </el-table-column>
+          <el-table-column prop="date" label="金额2">
+            <template slot-scope="{row,$index}">
+              <el-form-item required :prop="'itemList.'+$index+'.amountStr2'" label-width="0" :show-message="false">
+                <input v-model="row.amountStr2" v-only-number="{precision:2,max:1235,isMoney:true}"  type="text" maxlength="40"
+                  placeholder="请输入" />
+              </el-form-item>
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-form>
+    </div>
+  </div>
+</body>
+<script src="https://cdn.bootcdn.net/ajax/libs/vue/2.6.13/vue.js"></script>
+<!-- 引入样式 -->
+<link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css" />
+<!-- 引入组件库 -->
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+
+<script>
+  Vue.config.productionTip = false;
+  new Vue({
+    el: "#App",
+    data() {
+      return {
+        form: {
+          itemList: [
+            {
+              weightStr: '',
+              priceStr: '',
+              priceStr2:'123456.00',
+              priceStr3:'456789.21',
+              amountStr: '',
+              amountStr2: '12345',
+            }
+          ]
+        }
+      };
+    },
+    directives: {
+      // 只能输入数字
+      onlyNumber(el, vDir, vNode) {
+        // vDir.value 有指令的参数
+        let content;
+        const isMoney = vDir.value?.isMoney || false;
+        const formatterMoney = (val) => val.replaceAll(",", "");
+        // 设置输入框的值,触发input事件,改变v-model绑定的值
+        const setVal = (val) => {
+          if (vNode.componentInstance) {
+            // 如果是自定义组件就触发自定义组件的input事件
+            vNode.componentInstance.$emit("input", val);
+          } else {
+            // 如果是原生组件就触发原生组件的input事件
+            el.value = val;
+            el.dispatchEvent(new Event("input"));
+          }
+        };
+        function thousandBitSeparator(num) {
+          const num1 = num.toString().split(".")[0]
+          const num2 = num.toString().split(".")[1]
+          const c = num1.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,');
+          if (num.toString().indexOf(".") !== -1) {
+            return c + "." + num2
+          } else {
+            return c
+          }
+        }
+        const inputDom = el?.querySelector('input')
+         isMoney && vNode.context.$nextTick(function () { 
+          inputDom
+          ?                
+          inputDom.value=thousandBitSeparator(vNode.data?.model?.value??'')
+          : 
+          el.value =thousandBitSeparator(el.value)                  
+         })
+        // 按键按下=>只允许输入 数字/小数点/减号
+        el.addEventListener("keypress", (event) => {
+          const e = event || window.event;
+          const inputKey = String.fromCharCode(
+            typeof e.charCode === "number" ? e.charCode : e.keyCode
+          );
+          const re = /\d|\.|-/;
+          content = e.target.value;
+          // 定义方法,阻止输入
+          function preventInput() {
+            if (e.preventDefault) {
+              e.preventDefault();
+            } else {
+              e.returnValue = false;
+            }
+          }
+          if (!re.test(inputKey) && !e.ctrlKey) {
+            preventInput();
+          } else if (content.indexOf(".") > 0 && inputKey === ".") {
+            // 已有小数点,再次输入小数点
+            preventInput();
+          }
+        });
+        el.addEventListener("input", (event) => {
+          // 此处会在 el-input 的 @change 后执行
+          const e = event || window.event;
+          const inputKey = String.fromCharCode(
+                  typeof e.charCode === "number" ? e.charCode : e.keyCode
+          );
+          const re = /\d|\.|-/;
+          content = e.target.value;
+          const inputVal = el.querySelector('input')
+          if(!isMoney) return
+          if(inputVal) {
+            inputVal.value =thousandBitSeparator(content.replaceAll(',',''))
+          }else {
+            el.value = thousandBitSeparator(content.replaceAll(',',''))
+          }
+
+        })
+         // 按键弹起=>并限制最大最小
+         el.addEventListener("focusout", (event) => {
+          const e = event || window.event;
+          content = isMoney
+            ? parseFloat(formatterMoney(e.target.value) || 0)
+            : parseFloat(e.target.value) || 0;
+          // content = parseFloat(e.target.value);
+          if (!content) {
+            content = 0.0;
+          }
+          let arg_max = "";
+          let arg_min = "";
+          if (vDir.value) {
+            arg_max = parseFloat(vDir.value.max);
+            arg_min = parseFloat(vDir.value.min);
+          }
+          if (arg_max !== undefined && content > arg_max) {
+            setVal(arg_max);
+            content = arg_max;
+          }
+          if (arg_min !== undefined && content < arg_min) {
+            setVal(arg_min);
+            content = arg_min;
+          }
+        });
+        // 失去焦点=>保留指定位小数
+        el.addEventListener("focusout", (event) => {
+          // 此处会在 el-input 的 @change 后执行
+          const e = event || window.event;
+          content = isMoney
+            ? parseFloat(formatterMoney(e.target.value.replaceAll(',','')) || 0)
+            : parseFloat(e.target.value.replaceAll(',','')) || 0;
+          // content = parseFloat(e.target.value);
+          if (!content) {
+            content = 0.0;
+          }
+          let arg_precision = 0; // 默认保留至整数
+          if (vDir.value.precision) {
+            arg_precision = parseFloat(vDir.value.precision);
+          }
+          if (vDir.value.intergal) {
+            content = content ? Number.parseInt(content.replaceAll(',','')) : null;
+          } else {
+            content = content.toFixed(arg_precision);
+          }
+          // e.target.value = isMoney
+          //   ? thousandBitSeparator(content.toString())
+          //   : content;
+          setVal(content);
+        });
+      },
+      
+    },
+
+  });
+</script>
+
+</html>
